@@ -24,14 +24,14 @@ modules:
   - name: veracrypt
     buildsystem: simple
     build-commands:
+      # Fixes to build wxWidgets 3.2.2.1 on VeraCrypt 1.25.9, also disable WebRequests as it won't build otherwise
       - sed -i 's/--disable-webkit/--disable-addremovectrl --disable-webrequest/g' veracrypt/src/Makefile
       - make -C veracrypt/src/ WXSTATIC=1 WITHGTK3=1 WX_ROOT=/run/build/veracrypt/wx wxbuild
       - make -C veracrypt/src/ WXSTATIC=1 WITHGTK3=1 WX_ROOT=/run/build/veracrypt/wx
-      #- install -Dm 644 -t /app/share/applications fr.veracrypt.veracrypt_testing.desktop
+      # Replace Icon= and Exec= lines with their respective Flatpak equivalents from veracrypt.desktop file
       - sed -e "s|/usr/|/app/|g" -e "s/^Icon=.*/Icon=fr.veracrypt.veracrypt_testing/" -i veracrypt/src/Setup/Linux/veracrypt.desktop
       - sed -e "s|^Exec=/usr/bin/|Exec=/app/bin/|g" -i veracrypt/src/Setup/Linux/veracrypt.desktop
       - install -Dm 644 -t /app/share/applications veracrypt/src/Setup/Linux/veracrypt.desktop
-      - ls /app/share/applications
       - install -Dm 644 -t /app/share/metainfo fr.veracrypt.veracrypt_testing.metainfo.xml
       - install -Dm 644 fr.veracrypt.veracrypt_testing.png /app/share/icons/hicolor/512x512/apps/fr.veracrypt.veracrypt_testing.png
       - install -Dm 755 veracrypt/src/Main/veracrypt /app/bin/veracrypt
