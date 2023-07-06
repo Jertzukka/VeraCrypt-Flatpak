@@ -1,0 +1,51 @@
+app-id: fr.veracrypt.veracrypt_testing
+runtime: org.gnome.Platform
+runtime-version: '43'
+sdk: org.gnome.Sdk
+command: veracrypt
+finish-args:
+  - --share=ipc
+  # Wayland doesn't work on wxWidgets
+  - --socket=x11
+  - --filesystem=host
+rename-desktop-file: veracrypt.desktop
+modules:
+
+  - name: yasm
+    buildsystem: cmake-ninja
+    builddir: true
+    cleanup:
+      - '*'
+    sources:
+      - type: archive
+        url: https://github.com/yasm/yasm/releases/download/v1.3.0/yasm-1.3.0.tar.gz
+        sha256: 3dce6601b495f5b3d45b59f7d2492a340ee7e84b5beca17e48f862502bd5603f
+  
+  - name: veracrypt
+    buildsystem: simple
+    build-commands:
+      - sed -i 's/--disable-webkit/--disable-addremovectrl --disable-webrequest/g' veracrypt/src/Makefile
+      - make -C veracrypt/src/ WXSTATIC=1 WITHGTK3=1 WX_ROOT=/run/build/veracrypt/wx wxbuild
+      - make -C veracrypt/src/ WXSTATIC=1 WITHGTK3=1 WX_ROOT=/run/build/veracrypt/wx
+      #- install -Dm 644 -t /app/share/applications fr.veracrypt.veracrypt_testing.desktop
+      - sed -e "s|/usr/|/app/|g" -e "s/^Icon=.*/Icon=fr.veracrypt.veracrypt_testing/" -i veracrypt/src/Setup/Linux/veracrypt.desktop
+      - sed -e "s|^Exec=/usr/bin/|Exec=/app/bin/|g" -i veracrypt/src/Setup/Linux/veracrypt.desktop
+      - install -Dm 644 -t /app/share/applications veracrypt/src/Setup/Linux/veracrypt.desktop
+      - ls /app/share/applications
+      - install -Dm 644 -t /app/share/metainfo fr.veracrypt.veracrypt_testing.metainfo.xml
+      - install -Dm 644 fr.veracrypt.veracrypt_testing.png /app/share/icons/hicolor/512x512/apps/fr.veracrypt.veracrypt_testing.png
+      - install -Dm 755 veracrypt/src/Main/veracrypt /app/bin/veracrypt
+    sources:
+      - type: git
+        url: https://github.com/wxWidgets/wxWidgets.git
+        tag: v3.2.2.1
+        dest: wx
+      - type: archive
+        url: https://github.com/veracrypt/VeraCrypt/archive/refs/tags/VeraCrypt_1.25.9.tar.gz
+        sha256: 8a77d01574ec87bcd44d332b707760fe9dc0b5ecf4dc99abf083d8e554d4b88f
+        dest: veracrypt
+      - type: file
+        path: fr.veracrypt.veracrypt_testing.metainfo.xml
+      - type: file
+        path: fr.veracrypt.veracrypt_testing.png
+
