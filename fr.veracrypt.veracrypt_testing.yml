@@ -8,6 +8,7 @@ finish-args:
   # Wayland doesn't work on wxWidgets
   - --socket=x11
   - --filesystem=host
+  - --device=all
 rename-desktop-file: veracrypt.desktop
 modules:
 
