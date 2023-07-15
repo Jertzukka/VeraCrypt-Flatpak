@@ -8,7 +8,11 @@ finish-args:
   # Wayland doesn't work on wxWidgets
   - --socket=x11
   - --filesystem=host
+  # Required to view FUSE mounts in /tmp/.veracrypt_aux_mntX on host
+  - --filesystem=/tmp
   - --device=all
+  # Required to start arbitrary programs on host via flatpak-spawn --host
+  - --talk-name=org.freedesktop.Flatpak
 rename-desktop-file: veracrypt.desktop
 modules:
 
