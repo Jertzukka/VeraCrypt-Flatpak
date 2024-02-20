@@ -13,8 +13,28 @@ finish-args:
   - --device=all
   # Required to start arbitrary programs on host via flatpak-spawn --host
   - --talk-name=org.freedesktop.Flatpak
+  # Support PCSC smartcards
+  - --socket=pcsc
 rename-desktop-file: veracrypt.desktop
 modules:
+
+  - name: libfuse
+    config-opts:
+      - UDEV_RULES_PATH=/app/etc/udev/rules.d
+      - INIT_D_PATH=/app/etc/init.d
+    build-options:
+      env:
+        MOUNT_FUSE_PATH: "../tmp/"
+    cleanup:
+      - /bin/ulockmgr_server
+    sources:
+      - type: archive
+        url: https://github.com/libfuse/libfuse/releases/download/fuse-2.9.9/fuse-2.9.9.tar.gz
+        sha256: d0e69d5d608cc22ff4843791ad097f554dd32540ddc9bed7638cc6fea7c1b4b5
+      - type: patch
+        path: fuse-2.9.2-closefrom.patch
+      - type: patch
+        path: fuse-2.9.2-namespace-conflict-fix.patch
 
   - name: yasm
     buildsystem: cmake-ninja
@@ -22,15 +42,28 @@ modules:
     cleanup:
       - '*'
     sources:
+      - type: git
+        url: https://github.com/yasm/yasm.git
+        tag: v1.3.0
+
+  - name: pcsc-lite
+    config-opts:
+      - --disable-libudev
+      - --disable-libsystemd
+      - --without-systemdsystemunitdir
+      - --disable-serial
+      - --disable-usb
+      - --disable-documentation
+      - --with-systemdsystemunitdir=/app/lib/systemd/
+      - --disable-polkit
+    sources:
       - type: archive
-        url: https://github.com/yasm/yasm/releases/download/v1.3.0/yasm-1.3.0.tar.gz
-        sha256: 3dce6601b495f5b3d45b59f7d2492a340ee7e84b5beca17e48f862502bd5603f
+        url: https://salsa.debian.org/rousseau/PCSC/-/archive/2.0.1/PCSC-2.0.1.tar.gz
+        sha256: b49562b31cfec8c9abd924f05e59d701b67a8037166f9e7996d6a537fa3f069b
   
   - name: veracrypt
     buildsystem: simple
     build-commands:
-      # Fixes to build wxWidgets 3.2.2.1 on VeraCrypt 1.25.9, also disable WebRequests as it won't build otherwise
-      - sed -i 's/--disable-webkit/--disable-addremovectrl --disable-webrequest/g' veracrypt/src/Makefile
       - make -C veracrypt/src/ WXSTATIC=1 WITHGTK3=1 WX_ROOT=/run/build/veracrypt/wx wxbuild
       - make -C veracrypt/src/ WXSTATIC=1 WITHGTK3=1 WX_ROOT=/run/build/veracrypt/wx
       # Replace Icon= and Exec= lines with their respective Flatpak equivalents from veracrypt.desktop file
@@ -45,9 +78,9 @@ modules:
         url: https://github.com/wxWidgets/wxWidgets.git
         tag: v3.2.2.1
         dest: wx
-      - type: archive
-        url: https://github.com/veracrypt/VeraCrypt/archive/refs/tags/VeraCrypt_1.25.9.tar.gz
-        sha256: 8a77d01574ec87bcd44d332b707760fe9dc0b5ecf4dc99abf083d8e554d4b88f
+      - type: git
+        url: https://github.com/veracrypt/VeraCrypt.git
+        tag: VeraCrypt_1.26.7
         dest: veracrypt
       - type: file
         path: fr.veracrypt.veracrypt_testing.metainfo.xml
